@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Jellyfin.Plugin.SharedEditions</AssemblyName>
+    <Version>0.3.1</Version>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <JellyfinServerDirectory Condition="'$(JellyfinServerDirectory)' == ''">$(MSBuildThisFileDirectory)../reference-assemblies</JellyfinServerDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="SharedArchive.cs" />
+    <Compile Include="Plugin.cs" />
+    <Compile Include="ArchiveCatalog.cs" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <Reference Include="MediaBrowser.Common"><HintPath>$(JellyfinServerDirectory)/MediaBrowser.Common.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="MediaBrowser.Model"><HintPath>$(JellyfinServerDirectory)/MediaBrowser.Model.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="MediaBrowser.Controller"><HintPath>$(JellyfinServerDirectory)/MediaBrowser.Controller.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Jellyfin.Database.Implementations"><HintPath>$(JellyfinServerDirectory)/Jellyfin.Database.Implementations.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Jellyfin.Data"><HintPath>$(JellyfinServerDirectory)/Jellyfin.Data.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

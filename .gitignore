@@ -1,0 +1,17 @@
+bin/
+obj/
+reference-assemblies/
+dist/
+__pycache__/
+*.py[cod]
+*.mkva
+*.jfshare
+*.mkv
+*.partial
+*.verification.json
+*.env
+.env*
+*.db*
+*.sqlite*
+*.log
+*.pdb

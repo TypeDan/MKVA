@@ -1,0 +1,9 @@
+{
+  "guid": "9fc320f8-4118-4bdc-9261-7e421f2954d0",
+  "name": "MKV Archive",
+  "version": "0.3.1.0",
+  "targetAbi": "12.3.0.0",
+  "status": "Active",
+  "autoUpdate": false,
+  "description": "Custom .mkva archives with byte-exact selectable MKV editions."
+}
