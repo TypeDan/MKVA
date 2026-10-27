@@ -1,42 +1,26 @@
-# MKVA — MKV Archive
+# MKVA (MKV Archive)
 
-Lossless shared storage for multiple editions of one film, with a Jellyfin plugin
-that presents each edition as its original, seekable MKV.
+MKVA stores multiple editions of a film in one archive, sharing identical encoded
+media payloads to save space. Each edition can be reconstructed byte for byte.
+The Jellyfin plugin exposes those editions as seekable MKV streams.
 
-**MKVA is a custom archive format, not an ordinary MKV or an official Matroska
-extension.** Normal media players cannot open the archive directly. The plugin
-serves exact MKV views, and the independent Python tool can recover standalone MKVs.
+MKVA is a custom format. It is not a standard MKV container or a Matroska extension,
+and media players cannot open it directly. Use the plugin for playback or the
+Python tool to recover a standalone MKV.
 
-## What it does
+## Status
 
-- Stores identical compressed Matroska Block/SimpleBlock payload chunks once.
-- Preserves each original file's headers, timestamps, tracks, subtitles, chapters,
-  cues, attachments and other bytes through a per-edition extent map.
-- Verifies every complete reconstructed MKV checksum before publishing an archive.
-- Serves byte ranges through stock Jellyfin and FFmpeg without re-encoding.
-- Keeps different films isolated with immutable archive IDs and separate routes.
-- Reports edition labels, sizes, durations and stream information through normal
-  Jellyfin media sources; audio/subtitles remain client-selectable.
+Version 0.3.1 is a prototype targeting Jellyfin 12.3 and .NET 10. Check it against
+your server and clients before relying on it. Keep the original files and an
+independent backup until you have verified recovery and playback.
 
-The current plugin version is **0.3.1**, targeting **Jellyfin 12.3 / .NET 10**.
-This remains a prototype. Codec negotiation/transcoding still belongs to Jellyfin.
-Client compatibility beyond the validated cases is not guaranteed.
-
-## Repository
-
-- `plugin/`: C# Jellyfin plugin and installation metadata.
-- `tools/mkva_archive.py`: standalone standard-library Python packer and recovery tool.
-- `docs/format-v1.md`: archive layout and compatibility notes.
-- `docs/plugin.md`: installation, configuration and integration protocol.
-- `tests/`: portable byte-exact reconstruction and recovery tests.
-
-No media, credentials, runtime configuration, local deployment scripts, user
-databases or server reference assemblies are included. Dr Rip source is not
-included; an external application can use the documented registration protocol.
+Space savings depend on identical compressed bytes. Two independent encodes of
+the same film may share little data. Headers, timestamps, tracks, subtitles,
+chapters, cues and attachments are preserved in each edition's byte map.
 
 ## Pack and recover
 
-Create a JSON array describing the already-approved original MKVs:
+The Python tool uses only the standard library. Create an `editions.json` file:
 
 ```json
 [
@@ -45,46 +29,62 @@ Create a JSON array describing the already-approved original MKVs:
 ]
 ```
 
-`duration_ticks` uses 100-nanosecond units. Supply `expected_sha256` per entry when
-binding inputs to independently approved files. Edition IDs must use ASCII letters,
-digits or hyphens and remain unique within the archive.
+Durations are in 100-nanosecond ticks. Use unique edition IDs containing ASCII
+letters, digits or hyphens. Add `expected_sha256` to each entry to check the input
+against a checksum you recorded independently.
 
 ```sh
 python -I -B tools/mkva_archive.py editions.json movie.mkva
 python -I -B tools/mkva_archive.py extract movie.mkva theatrical recovered.mkv
-python -I -B -m unittest discover -s tests -v
 ```
 
-The tool refuses existing archive/recovery output paths. Interrupted partial files
-remain for explicit review. Retain originals and an independent backup until full
-verification and actual-client playback have been accepted. The standalone tools
-do **not** delete originals, transfer to a library or perform TMM metadata scraping.
+Packing verifies the full checksum of every reconstructed edition before renaming
+the completed archive. Recovery also checks the original checksum. Existing output
+files are refused; interrupted builds leave a `.partial` file for inspection.
+Run Python without `-O`: the tool uses assertions for validation.
 
-## Build the plugin
+The tool does not delete originals, move files into a library or fetch metadata.
+Archives retain original filenames and supplied edition metadata; verification
+receipts contain local output paths. Review these before sharing your own archives
+or receipts.
 
-Install a .NET 10 SDK and obtain matching Jellyfin 12.3 server assemblies. Point the
-build at their directory; these dependencies are intentionally not redistributed:
+## Jellyfin plugin
+
+Build with a .NET 10 SDK and matching Jellyfin 12.3 server assemblies:
 
 ```sh
 dotnet build plugin/SharedEditions.csproj -c Release -p:JellyfinServerDirectory=/path/to/jellyfin/assemblies
 ```
 
-Install only the plugin DLL and `meta.json`, following [the plugin guide](docs/plugin.md).
-The archive is not automatically discovered merely by copying it into a movie
-library: it also needs registration, metadata and the edition STRM pointers.
+Server assemblies are not included. Install the plugin DLL and `meta.json` using
+[the plugin guide](docs/plugin.md). The guide covers configuration, archive
+registration, STRM pointers and playback verification. Copying an archive into a
+movie folder alone does not make it playable.
 
-## Limits
+The plugin provides edition labels, sizes and durations through Jellyfin media
+sources. Jellyfin handles codec negotiation and transcoding. Client compatibility
+needs testing on the clients you use.
 
-Packing is intended for a workstation, not a small Jellyfin server. Payload hash
-indexes and extent maps consume RAM. The builder has no active cancellation or
-partial-build resume. The plugin validates format bounds and keeps a bounded idle
-map cache; simultaneous active streams still retain their required maps.
+## Development
 
-Savings depend on identical compressed payload bytes. Independent re-encodes may
-share little. Keep weak/no-saving results out of automatic publication workflows.
-The plugin supports its registered catalogue and the legacy single-archive
-environment configuration; it does not provide an admin configuration screen yet.
+- `plugin/`: C# plugin and installation metadata.
+- `tools/mkva_archive.py`: packer and recovery tool.
+- [Format v1](docs/format-v1.md): archive layout and reader limits.
+- [Plugin guide](docs/plugin.md): installation and integration API.
+- `tests/`: synthetic EBML fixtures for reconstruction and recovery.
 
-The stable plugin GUID, assembly name and `JFSHARE1` archive signature intentionally
-retain the project's earlier Shared Editions identity for compatibility. Legacy
-`.jfshare` files use the same v1 layout and remain readable.
+Run the archive tests:
+
+```sh
+python -I -B -m unittest discover -s tests -v
+```
+
+These tests check byte layout and recovery, not real media playback.
+
+Packing keeps payload hashes and extent maps in RAM and is intended for a
+workstation. Builds cannot yet be resumed. The plugin bounds its idle map cache,
+but active streams retain their maps. There is no admin configuration screen.
+
+The assembly name, plugin GUID and `JFSHARE1` signature retain the earlier Shared
+Editions identity for compatibility. Legacy `.jfshare` archives use the same v1
+layout.
