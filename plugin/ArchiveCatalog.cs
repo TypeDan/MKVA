@@ -61,7 +61,7 @@ internal static class ArchiveCatalog
             if(archive.Entries.Count!=record.Entries.Count || record.Entries.Any(x=>!archive.Entries.TryGetValue(x.Id,out var e)
                 || e.Sha256!=x.Sha256 || e.Size!=x.Size || e.Label!=x.Label || e.DurationTicks!=x.DurationTicks))
                 throw new InvalidDataException("Archive editions differ from registration");
-            // Bound idle catalogue RAM on the 1 GB server. Existing playback streams
+            // Bound idle catalogue RAM. Existing playback streams
             // retain their own entry/map references when an idle archive is evicted.
             Cache.Clear();
             Cache.Add(id,(archive,file.LastWriteTimeUtc.Ticks));
