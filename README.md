@@ -18,6 +18,49 @@ Space savings depend on identical compressed bytes. Two independent encodes of
 the same film may share little data. Headers, timestamps, tracks, subtitles,
 chapters, cues and attachments are preserved in each edition's byte map.
 
+## Desktop tool
+
+The desktop tool creates shared archives and restores one or more editions to
+ordinary standalone MKVs. It uses Python 3.12 or later with Tkinter; there are no
+third-party Python dependencies.
+
+On Windows, download this repository and double-click **Start MKVA Tool.cmd**.
+Alternatively, on Windows, macOS or Linux:
+
+```sh
+python -I -B tools/launch_mkva_tool.pyw
+```
+
+1. **Create archive:** select a folder containing two to 32 MKV editions of one
+   film, choose a new `.mkva` filename and review the edition list.
+2. **Extract editions:** open an archive, select the editions to restore and
+   choose a new output folder. Original filenames and sidecars are restored.
+
+DVD-origin MPEG-2 MKVs and Blu-ray MKVs use the same format. Raw `VIDEO_TS`, VOB
+and BDMV folders must first be ripped to MKV. All existing audio, subtitles,
+chapters, language tags and default/forced flags stay unchanged. Each cut retains
+its own subtitle timing; DVD bitmap subtitles are preserved without OCR.
+
+New archives include NFOs, artwork and external subtitles from the selected folder
+in a separate attachments catalogue. Extraction restores edition-specific sidecars
+and shared artwork. Older archives contain only their original MKV views: keep any
+separately stored sidecars alongside them.
+
+The tool reads duration directly from the MKV header, so archives have the duration
+fields required by the existing plugin. It does not register archives or create
+Jellyfin playback pointers automatically. See the [plugin guide](docs/plugin.md).
+No plugin update is required for the desktop tool or DVD-origin MKVs.
+
+The same folder workflow is available from the command line:
+
+```sh
+python -I -B tools/mkva_tool.py pack "/path/to/Film (2000)" film.mkva
+python -I -B tools/mkva_tool.py list film.mkva
+python -I -B tools/mkva_tool.py extract film.mkva "/path/to/new-output" --edition edition-1
+```
+
+Omit `--edition` to extract all editions. Repeat it to select several.
+
 ## Pack and recover
 
 The Python tool uses only the standard library. Create an `editions.json` file:
@@ -41,7 +84,7 @@ python -I -B tools/mkva_archive.py extract movie.mkva theatrical recovered.mkv
 Packing verifies the full checksum of every reconstructed edition before renaming
 the completed archive. Recovery also checks the original checksum. Existing output
 files are refused; interrupted builds leave a `.partial` file for inspection.
-Run Python without `-O`: the tool uses assertions for validation.
+Validation remains active when Python runs with optimization enabled.
 
 The tool does not delete originals, move files into a library or fetch metadata.
 Archives retain original filenames and supplied edition metadata; verification
@@ -68,7 +111,9 @@ needs testing on the clients you use.
 ## Development
 
 - `plugin/`: C# plugin and installation metadata.
-- `tools/mkva_archive.py`: packer and recovery tool.
+- `tools/mkva_archive.py`: archive format, packer and recovery.
+- `tools/mkva_tool.py`: desktop GUI and folder-based CLI.
+- `tools/launch_mkva_tool.pyw`: portable desktop launcher.
 - [Format v1](docs/format-v1.md): archive layout and reader limits.
 - [Plugin guide](docs/plugin.md): installation and integration API.
 - `tests/`: synthetic EBML fixtures for reconstruction and recovery.
@@ -79,7 +124,8 @@ Run the archive tests:
 python -I -B -m unittest discover -s tests -v
 ```
 
-These tests check byte layout and recovery, not real media playback.
+These tests check byte layout, duration parsing, subtitle/sidecar recovery and
+corruption handling. They do not replace playback testing on your server.
 
 Packing keeps payload hashes and extent maps in RAM and is intended for a
 workstation. Builds cannot yet be resumed. The plugin bounds its idle map cache,

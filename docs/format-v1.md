@@ -31,3 +31,16 @@ The server currently bounds the JSON index to 10,000,000 bytes, each map to
 and the combined extent count to 4,000,000. The integration must enforce installed
 reader limits before copying large archives. This is a versioned prototype layout,
 not a Matroska standard or a general archival integrity/redundancy system.
+
+## Optional sidecar attachments
+
+New archives may include an `attachments` array beside `entries`. Each attachment
+uses the same extent-map fields and checksum, plus its original `name` and optional
+`owner` edition ID. A null owner denotes a common file. NFOs, artwork and external
+subtitle files are stored as original bytes. They are not movie editions and must
+not be registered as playback entries.
+
+Existing Jellyfin readers iterate only `entries`; the optional catalogue requires
+no change to their binary reader. Recovery tools can restore attachments as well
+as the selected original MKVs. Media entries retain required positive
+`duration_ticks`, while sidecar attachments do not have a duration.

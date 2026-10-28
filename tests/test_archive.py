@@ -69,17 +69,17 @@ class ArchiveTests(unittest.TestCase):
 
     def test_existing_archive_and_recovery_outputs_are_preserved(self):
         self.pack();before=self.output.read_bytes()
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(FileExistsError):
             archive.build(self.output,self.inputs)
         self.assertEqual(self.output.read_bytes(),before)
         destination=self.root/'existing.mkv';destination.write_bytes(b'user data')
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(FileExistsError):
             archive.extract(self.output,'theatrical',destination)
         self.assertEqual(destination.read_bytes(),b'user data')
 
     def test_wrong_approved_source_hash_does_not_publish(self):
         self.inputs[0]['expected_sha256']='0'*64
-        with contextlib.redirect_stdout(io.StringIO()),self.assertRaises(AssertionError):
+        with contextlib.redirect_stdout(io.StringIO()),self.assertRaises(ValueError):
             archive.build(self.output,self.inputs)
         self.assertFalse(self.output.exists())
         self.assertTrue(self.output.with_suffix('.mkva.partial').exists())
@@ -90,7 +90,7 @@ class ArchiveTests(unittest.TestCase):
         for position in [0,len(data)-1]:
             bad=bytearray(data);bad[position]^=1
             corrupted=self.root/('corrupt-'+str(position)+'.mkva');corrupted.write_bytes(bad)
-            with self.assertRaises(AssertionError):
+            with self.assertRaises(ValueError):
                 archive.index_of(corrupted)
 
 
