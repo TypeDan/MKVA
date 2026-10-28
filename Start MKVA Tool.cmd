@@ -1,7 +1,7 @@
 @echo off
 where pyw >nul 2>nul
 if not errorlevel 1 (
-  start "" pyw -3.12 -I -B "%~dp0tools\launch_mkva_tool.pyw"
+  start "" pyw -3 -I -B "%~dp0tools\launch_mkva_tool.pyw"
   exit /b
 )
 where pythonw >nul 2>nul
